@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Eduva - Student Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script> 
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #e3f2fd; min-height: 100vh; }
+        .edu-brand { font-weight: 700; color: #3b82f6; }
+        .nav-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; font-weight: 600; }
+        .sub-nav-tab.active { background-color: #3b82f6; color: white; }
+        .tab-scroll::-webkit-scrollbar { height: 4px; }
+        .tab-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+        .modal-bg { background-color: rgba(0,0,0,0.55); backdrop-filter: blur(3px); }
+        /* Star rating hover effect for feedback modal */
+        .rating input[type="radio"] { display: none; }
+        .rating label {
+            cursor: pointer; font-size: 2rem; color: #ccc; transition: color 0.2s;
+        }
+        .rating label:hover,
+        .rating label:hover ~ label,
+        .rating input:checked ~ label {
+            color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div id="dashboard-container">
+        <header class="bg-white shadow-lg p-4 flex justify-between items-center sticky top-0 z-20">
+            <div class="flex items-center">
+                <i data-lucide="graduation-cap" class="w-7 h-7 text-blue-600 mr-2"></i>
+                <span class="text-xl edu-brand">Eduva</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <p class="text-sm text-gray-500 hidden md:block">Welcome, <span id="student-name" class="font-semibold text-gray-700">Student</span></p>
+                <button id="exit-button" class="flex items-center bg-red-500 text-white py-2 px-4 rounded-lg">
+                    <i data-lucide="log-out" class="w-4 h-4 mr-1"></i> Logout
+                </button>
+            </div>
+        </header>
+
+        <main class="p-4 md:p-8">
+            <h1 class="text-3xl font-extrabold text-gray-900 mb-8">Student Dashboard</h1>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-2xl shadow-xl flex items-center">
+                    <div class="p-3 bg-green-100 rounded-full mr-4"><i data-lucide="file-check" class="w-6 h-6 text-green-600"></i></div>
+                    <div><p class="text-sm font-medium text-gray-500">Completed Assignments</p><p class="text-3xl font-bold text-gray-900">0</p></div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-xl flex items-center">
+                    <div class="p-3 bg-orange-100 rounded-full mr-4"><i data-lucide="clock" class="w-6 h-6 text-orange-600"></i></div>
+                    <div><p class="text-sm font-medium text-gray-500">Upcoming Deadlines</p><p id="upcoming-deadlines-count" class="text-3xl font-bold text-gray-900">1</p></div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-xl flex items-center">
+                    <div class="p-3 bg-purple-100 rounded-full mr-4"><i data-lucide="trophy" class="w-6 h-6 text-purple-600"></i></div>
+                    <div><p class="text-sm font-medium text-gray-500">Activities Uploaded</p><p id="activities-count" class="text-3xl font-bold text-gray-900">2</p></div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl">
+                <div class="flex border-b border-gray-200 mb-6 space-x-8 overflow-x-auto tab-scroll text-base font-medium">
+                    <button data-view="subjects" class="nav-tab active flex items-center"><i data-lucide="book-open-check" class="w-5 h-5 mr-2"></i> Subjects</button>
+                    <button data-view="assignments" class="nav-tab flex items-center"><i data-lucide="clipboard-list" class="w-5 h-5 mr-2"></i> Assignments</button>
+                    <button data-view="activities" class="nav-tab flex items-center"><i data-lucide="trophy" class="w-5 h-5 mr-2"></i> Activities</button>
+                    <button data-view="feedback" class="nav-tab flex items-center"><i data-lucide="message-square" class="w-5 h-5 mr-2"></i> Feedback</button>
+                </div>
+
+                <div id="dashboard-content">
+                    <div id="subjects-view" class="content-view">
+                        <div id="my-subjects" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            </div>
+                        <div id="subject-detail-section" class="bg-gray-50 p-6 rounded-xl hidden">
+                            </div>
+                    </div>
+
+                    <div id="assignments-view" class="content-view hidden">
+                        <h2 class="text-3xl font-bold mb-6">Assignments & Quizzes</h2>
+                        <div class="flex space-x-3 mb-6">
+                            <button data-assignment-filter="all" class="sub-nav-tab active">All</button>
+                            <button data-assignment-filter="pending" class="sub-nav-tab">Pending</button>
+                            <button data-assignment-filter="submitted" class="sub-nav-tab">Submitted</button>
+                            <button data-assignment-filter="graded" class="sub-nav-tab">Graded</button>
+                        </div>
+                        <div id="assignment-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            </div>
+                    </div>
+
+                    <div id="activities-view" class="content-view hidden">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-3xl font-bold">My Activities & Achievements</h2>
+                            <button id="add-activity-button" class="bg-blue-600 text-white py-2 px-4 rounded-lg">
+                                <i data-lucide="plus" class="w-5 h-5 mr-1"></i> Add Activity
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 md:grid-cols-3 md:gap-6 mb-8 text-center">
+                            <div class="bg-white p-4 md:p-6 rounded-xl shadow-md border"><div class="p-2 bg-yellow-100 rounded-full inline-block mb-2"><i data-lucide="trophy" class="w-6 h-6 text-yellow-600"></i></div><p class="text-2xl md:text-3xl font-bold text-gray-900" id="total-activities-count">2</p><p class="text-xs md:text-sm font-medium text-gray-500">Total Activities</p></div>
+                            <div class="bg-white p-4 md:p-6 rounded-xl shadow-md border"><div class="p-2 bg-purple-100 rounded-full inline-block mb-2"><i data-lucide="star" class="w-6 h-6 text-purple-600"></i></div><p class="text-2xl md:text-3xl font-bold text-gray-900" id="achievements-count">1</p><p class="text-xs md:text-sm font-medium text-gray-500">Achievements</p></div>
+                            <div class="bg-white p-4 md:p-6 rounded-xl shadow-md border"><div class="p-2 bg-indigo-100 rounded-full inline-block mb-2"><i data-lucide="calendar-check" class="w-6 h-6 text-indigo-600"></i></div><p class="text-2xl md:text-3xl font-bold text-gray-900" id="this-month-count">0</p><p class="text-xs md:text-sm font-medium text-gray-500">This Month</p></div>
+                        </div>
+
+                        <div id="activities-list" class="space-y-6">
+                            </div>
+                    </div>
+
+                    <div id="feedback-view" class="content-view hidden">
+                        <h2 class="text-3xl font-bold mb-6">Weekly Feedback</h2>
+                        <div class="mb-8 p-6 bg-gray-50 rounded-xl">
+                            <h3 class="text-lg font-semibold mb-4">Subjects to Give Feedback</h3>
+                            <div id="feedback-subjects" class="flex flex-wrap gap-4">
+                                </div>
+                            <p class="text-sm text-gray-600 mt-4" id="feedback-completion-text"></p>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2"><div id="feedback-progress-bar" class="h-2.5 rounded-full bg-blue-500"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <div id="feedback-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-bg p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h3 class="text-xl font-bold mb-4">Submit Feedback for <span id="feedback-subject-title" class="text-blue-600"></span></h3>
+            <form id="feedback-form">
+                <div class="mb-5">
+                    <label class="block text-sm font-medium mb-2">How would you rate this week's classes?</label>
+                    <div class="rating flex flex-row-reverse justify-center text-4xl">
+                        <input type="radio" id="star5" name="rating" value="5" /><label for="star5" title="5 stars">★</label>
+                        <input type="radio" id="star4" name="rating" value="4" /><label for="star4" title="4 stars">★</label>
+                        <input type="radio" id="star3" name="rating" value="3" /><label for="star3" title="3 stars">★</label>
+                        <input type="radio" id="star2" name="rating" value="2" /><label for="star2" title="2 stars">★</label>
+                        <input type="radio" id="star1" name="rating" value="1" /><label for="star1" title="1 star">★</label>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Additional Comments (Optional)</label>
+                    <textarea id="feedback-comments" rows="3" class="w-full p-3 border rounded-xl"></textarea>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="hideFeedbackModal()">Cancel</button>
+                    <button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded-lg">Submit Feedback</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="add-activity-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-bg p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6">
+            <h3 class="text-xl font-bold mb-4">Log New Activity / Achievement</h3>
+            <form id="add-activity-form">
+                <div class="mb-3"><label class="block text-sm font-medium mb-1">Activity Title</label><input id="activity-title" type="text" class="w-full p-3 border rounded-xl" required></div>
+                <div class="grid grid-cols-2 gap-4 mb-3">
+                    <div><label class="block text-sm font-medium mb-1">Category</label><select id="activity-category" class="w-full p-3 border rounded-xl" required><option value="Competition">Competition</option><option value="Workshop">Workshop</option><option value="Volunteer">Volunteer</option><option value="Project">Project</option></select></div>
+                    <div><label class="block text-sm font-medium mb-1">Date</label><input id="activity-date" type="date" class="w-full p-3 border rounded-xl" required></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-3">
+                    <div><label class="block text-sm font-medium mb-1">Organizer</label><input id="activity-organizer" type="text" class="w-full p-3 border rounded-xl" required></div>
+                    <div><label class="block text-sm font-medium mb-1">Score / Achievement (Optional)</label><input id="activity-score" type="text" class="w-full p-3 border rounded-xl"></div>
+                </div>
+                <div class="mb-4"><label class="block text-sm font-medium mb-1">Description</label><textarea id="activity-description" rows="3" class="w-full p-3 border rounded-xl" required></textarea></div>
+                <div class="flex justify-end gap-3 mt-4">
+                    <button type="button" onclick="hideAddActivityModal()" class="py-2 px-4">Cancel</button>
+                    <button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded-lg">Save Activity</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="custom-alert-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-bg p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
+          <h4 id="alert-title" class="text-lg font-bold text-blue-600 mb-3">Success!</h4>
+          <p id="alert-message" class="text-gray-700 mb-6"></p>
+          <button id="close-alert-button" class="w-full bg-blue-600 text-white py-2 rounded-lg">OK</button>
+        </div>
+    </div>
+
+
+    <script src="student.js" type="module"></script>
+</body>
+</html>

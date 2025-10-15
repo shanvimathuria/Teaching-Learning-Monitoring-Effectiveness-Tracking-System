@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eduva - Teacher Dashboard</title>
+    <!-- Load Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Load Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e3f2fd; /* Very light blue (Blue 50-equivalent) */
+            min-height: 100vh;
+        }
+        /* Branding Style */
+        .edu-brand {
+            font-weight: 700;
+            color: #3b82f6; 
+        }
+
+        /* Style for the active navigation tab */
+        .nav-tab.active {
+            color: #3b82f6; 
+            border-bottom-color: #3b82f6;
+            font-weight: 600;
+        }
+        
+        /* Custom styles for the Daily Tracker upload button */
+        .upload-notes-btn {
+            color: #3b82f6; 
+            transition: color 0.15s;
+        }
+        .upload-notes-btn:hover {
+            color: #2563eb; 
+        }
+        /* Custom scrollbar for tab overflow */
+        .tab-scroll::-webkit-scrollbar {
+            height: 4px;
+        }
+        .tab-scroll::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 2px;
+        }
+        .tab-scroll::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+        
+        /* Styling for the Class/Semester Select box when a value is chosen */
+        .class-select-active {
+            border-color: #3b82f6 !important; /* blue-500 */
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3) !important; /* blue-500 with opacity */
+        }
+    </style>
+</head>
+<body class="transition-opacity duration-300" id="main-body">
+
+    <!-- Loading/Auth Check Screen (Initially shown) -->
+    <div id="loading-screen" class="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
+        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div>
+        <p class="mt-4 text-gray-600 font-medium">Checking authentication...</p>
+    </div>
+
+    <!-- Dashboard Content (Initially hidden) -->
+    <div id="dashboard-container" class="hidden">
+        <!-- Header (Top Bar) -->
+        <header class="bg-white shadow-lg p-4 flex justify-between items-center sticky top-0 z-20">
+            <div class="flex items-center">
+                <!-- Branding -->
+                <i data-lucide="graduation-cap" class="w-7 h-7 text-blue-600 mr-2"></i>
+                <span class="text-xl edu-brand">Eduva</span>
+            </div>
+            
+            <div class="flex items-center space-x-4 text-sm font-medium text-gray-700">
+                <p class="text-sm text-gray-500 hidden md:block">Welcome, <span id="teacher-name" class="font-semibold text-gray-700">Dr. Jane Doe (teacher)</span></p>
+
+                <!-- Logout Button -->
+                <button id="exit-button" class="flex items-center bg-red-500 text-white py-2 px-4 rounded-lg font-semibold hover:bg-red-600 transition duration-150 shadow-md">
+                    <i data-lucide="log-out" class="w-4 h-4 mr-1"></i> Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Layout -->
+        <main class="p-4 md:p-8">
+            
+            <!-- Main Dashboard Heading -->
+            <h1 class="text-3xl font-extrabold text-gray-900 mb-8">Teacher Dashboard</h1>
+            
+            <!-- Class Selector -->
+            <div class="mb-8 p-6 bg-white rounded-2xl shadow-xl border border-gray-100">
+                <!-- UPDATED: Reduced font size from text-xl to text-lg -->
+                <h2 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
+                    <i data-lucide="layout-grid" class="w-5 h-5 text-gray-500 mr-2"></i> Choose Class / Semester
+                </h2>
+                
+                <div class="relative">
+                    <select id="class-semester-select" 
+                            class="block w-full py-3 pl-4 pr-10 border-2 border-gray-300 rounded-2xl bg-white text-gray-800 font-medium focus:ring-4 focus:ring-blue-200 focus:border-blue-500 appearance-none transition duration-300 shadow-lg hover:border-blue-400 cursor-pointer">
+                        <option value="" disabled selected>Select a Class and Semester</option>
+                        <option value="B.TECH CSE - Sem II">B.TECH CSE - Sem II</option>
+                        <option value="B.TECH CSE AIML - Sem II">B.TECH CSE AIML - Sem II</option>
+                        <option value="B.TECH CSE - Sem IV">B.TECH CSE - Sem IV</option>
+                        <option value="B.TECH CSE AIML - Sem IV">B.TECH CSE AIML - Sem IV</option>
+                    </select>
+                    <i data-lucide="chevron-down" class="w-5 h-5 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none"></i>
+                </div>
+            </div>
+
+            <!-- Main Content Area with Tabs -->
+            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-gray-100">
+                
+                <!-- Tab Navigation -->
+                <div class="flex border-b border-gray-200 mb-6 space-x-8 overflow-x-auto tab-scroll text-base font-medium">
+                    <button data-view="syllabus" class="nav-tab flex items-center py-3 px-1 text-gray-600 border-b-4 border-transparent hover:border-blue-300 transition-colors duration-200 active">
+                        <i data-lucide="book" class="w-5 h-5 mr-2"></i> Syllabus
+                    </button>
+                    <button data-view="tracker" class="nav-tab flex items-center py-3 px-1 text-gray-600 border-b-4 border-transparent hover:border-blue-300 transition-colors duration-200">
+                        <i data-lucide="calendar" class="w-5 h-5 mr-2"></i> Daily Tracker
+                    </button>
+                    <button data-view="assignments" class="nav-tab flex items-center py-3 px-1 text-gray-600 border-b-4 border-transparent hover:border-blue-300 transition-colors duration-200">
+                        <i data-lucide="clipboard-list" class="w-5 h-5 mr-2"></i> Assignments
+                    </button>
+                    <button data-view="feedback" class="nav-tab flex items-center py-3 px-1 text-gray-600 border-b-4 border-transparent hover:border-blue-300 transition-colors duration-200">
+                        <i data-lucide="message-square" class="w-5 h-5 mr-2"></i> Feedback
+                    </button>
+                </div>
+
+                <!-- Content Views Container -->
+                <div id="dashboard-content">
+                    
+                    <!-- SYLLABUS VIEW -->
+                    <div id="syllabus-view" class="content-view">
+                        <div class="flex justify-between items-center mb-6">
+                            <!-- Main View Heading -->
+                            <h2 class="text-3xl font-bold text-gray-900">Syllabus Management</h2>
+                            <button id="add-subject-button" class="flex items-center bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200 shadow-md transform hover:scale-[1.02]">
+                                <i data-lucide="plus" class="w-5 h-5 mr-1"></i> Add Subject
+                            </button>
+                        </div>
+
+                        <!-- Add New Topic Form -->
+                        <div id="add-topic-form" class="bg-green-50 p-6 rounded-2xl border border-green-300 shadow-md mb-8 hidden">
+                            <h3 class="text-xl font-bold text-green-700 mb-4 border-b border-green-200 pb-2">Add New Topic</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="relative">
+                                    <label for="topic-subject" class="block text-sm font-medium text-gray-700">Select Subject</label>
+                                    <select id="topic-subject" class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 appearance-none pr-10">
+                                        <option value="" disabled selected>Select Subject</option>
+                                    </select>
+                                    <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-1/2 transform translate-y-2 text-gray-500 pointer-events-none"></i>
+                                </div>
+                                <div>
+                                    <label for="topic-name" class="block text-sm font-medium text-gray-700">Topic Name</label>
+                                    <input type="text" id="topic-name" class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500" placeholder="e.g., Calculus - Derivatives">
+                                </div>
+                                <div>
+                                    <label for="topic-description" class="block text-sm font-medium text-gray-700">Topic Description</label>
+                                    <input type="text" id="topic-description" class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500" placeholder="e.g., Introduction to derivatives and their applications">
+                                </div>
+                                <div>
+                                    <label for="topic-duration" class="block text-sm font-medium text-gray-700">Duration (hours)</label>
+                                    <input type="number" id="topic-duration" class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500" placeholder="4" min="0" step="0.5">
+                                </div>
+                                <div class="md:col-span-2 flex justify-end space-x-3 mt-2">
+                                    <button id="cancel-topic-button" type="button" class="bg-gray-200 text-gray-700 py-2 px-6 rounded-lg hover:bg-gray-300 font-semibold transition">Cancel</button>
+                                    <button id="save-topic-button" type="button" class="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700 font-semibold transition flex items-center">
+                                        <i data-lucide="check" class="w-4 h-4 mr-2"></i> Save Topic
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- List of Subjects (Grid layout) -->
+                        <div id="subject-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Dynamic subjects will be rendered here -->
+                            <div id="dynamic-subjects"></div>
+                        </div>
+                    </div>
+
+                    <!-- DAILY TRACKER VIEW -->
+                    <div id="tracker-view" class="content-view hidden">
+                        <div class="flex justify-between items-center mb-6">
+                            <!-- Main View Heading -->
+                            <h2 class="text-3xl font-bold text-gray-900">Daily Progress Tracker</h2>
+                            <button id="add-entry-button" class="flex items-center bg-green-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-green-700 transition-all duration-200 shadow-md transform hover:scale-[1.02]">
+                                <i data-lucide="plus" class="w-5 h-5 mr-1"></i> Add Today's Entry
+                            </button>
+                        </div>
+
+                        <!-- Daily Progress Form (Updated colors for consistency) -->
+                        <div id="daily-entry-form" class="bg-green-50 p-6 rounded-2xl border border-green-300 shadow-md mb-8 hidden">
+                            <h3 class="text-xl font-bold text-green-700 mb-4 border-b border-green-200 pb-2">Record Daily Log</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="entry-date" class="block text-sm font-medium text-gray-700">Date</label>
+                                    <input type="date" id="entry-date" class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+                                </div>
+                                <div class="relative">
+                                    <label for="entry-subject" class="block text-sm font-medium text-gray-700">Subject</label>
+                                    <select id="entry-subject" class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 appearance-none pr-10">
+                                        <option value="" disabled selected>Select Subject</option>
+                                    </select>
+                                    <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-1/2 transform translate-y-2 text-gray-500 pointer-events-none"></i>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label for="entry-topics" class="block text-sm font-medium text-gray-700">Topics Covered (comma-separated)</label>
+                                    <textarea id="entry-topics" rows="2" placeholder="e.g., Derivatives, Chain Rule" class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"></textarea>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label for="entry-notes" class="block text-sm font-medium text-gray-700">Observations & Remarks</label>
+                                    <textarea id="entry-notes" rows="3" placeholder="Add any observations, student feedback, or administrative notes..." class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"></textarea>
+                                </div>
+                                <div class="md:col-span-2 flex justify-end space-x-3 mt-2">
+                                    <button id="cancel-entry-button" type="button" class="bg-gray-200 text-gray-700 py-2 px-6 rounded-lg hover:bg-gray-300 font-semibold transition">Cancel</button>
+                                    <button id="save-entry-button" type="button" class="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700 font-semibold transition">Save Log</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Daily Progress List -->
+                        <div id="tracker-list" class="space-y-6">
+                            <!-- Example Card (Placeholder) -->
+                            <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div class="col-span-1 border-r border-gray-100 pr-4">
+                                        <h3 class="text-xl font-bold text-gray-800 mb-2 flex items-center">
+                                            <i data-lucide="book" class="w-5 h-5 mr-2 text-blue-500"></i> Data Structures
+                                        </h3>
+                                        <p class="text-sm font-semibold text-gray-500 mb-2">DATE: 2025-01-22</p>
+                                        <p class="text-sm text-gray-500">28 students • 2 topics</p>
+                                    </div>
+                                    <div class="col-span-2 pl-4">
+                                        <p class="text-sm font-semibold text-gray-600 mb-2">Topics Covered</p>
+                                        <ul class="list-none space-y-1 text-sm text-gray-700">
+                                            <li class="flex items-center text-green-600"><i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> Complexity Analysis ($O(n)$ notation)</li>
+                                            <li class="flex items-center text-green-600"><i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> Introduction to Linked Lists</li>
+                                        </ul>
+                                        
+                                        <p class="text-sm font-semibold text-gray-600 mt-4 mb-2">Teacher Notes</p>
+                                        <p class="text-sm text-gray-600 mb-4 p-3 bg-gray-50 rounded-lg">Class was highly interactive, but students need a dedicated session on recursive complexity.</p>
+                                        
+                                        <button class="upload-notes-btn flex items-center text-sm font-medium hover:text-blue-700">
+                                            <i data-lucide="upload-cloud" class="w-4 h-4 mr-1"></i> Upload Notes File
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ASSIGNMENTS VIEW -->
+                    <div id="assignments-view" class="content-view hidden">
+                        <div class="flex justify-between items-center mb-6">
+                            <!-- Main View Heading -->
+                            <h2 class="text-3xl font-bold text-gray-800">Assignments & Quizzes</h2>
+                            <button id="create-new-assignment-button" class="flex items-center bg-purple-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-purple-700 transition-all duration-200 shadow-md transform hover:scale-[1.02]">
+                                <i data-lucide="plus" class="w-5 h-5 mr-1"></i> Create New
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Assignment Card 1 -->
+                            <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                                <!-- CRITICAL UPDATE: items-center centers the due date badge vertically -->
+                                <div class="flex justify-between items-center mb-3">
+                                    <div class="flex items-center space-x-2">
+                                        <i data-lucide="file-text" class="w-6 h-6 text-purple-600"></i>
+                                        <h3 class="text-lg font-bold text-gray-800">Linear Algebra Midterm Prep</h3>
+                                    </div>
+                                    <span class="text-xs font-semibold text-red-500 bg-red-100 px-2 py-1 rounded-full">Due: 1/25/2025</span>
+                                </div>
+                                <p class="text-sm font-semibold text-purple-600 mb-3">ASSIGNMENT</p>
+                                <p class="text-sm text-gray-600 mb-4">Practice problems covering vector spaces and transformations.</p>
+                                
+                                <div class="text-sm text-gray-700 mb-2">
+                                    <span class="font-bold">75 Marks</span>
+                                    <span class="float-right text-green-600 font-semibold">22/30 Submitted (73%)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 73%"></div>
+                                </div>
+                                <div class="flex space-x-3">
+                                    <button class="view-submissions-btn flex-1 flex items-center justify-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition text-sm" data-assignment-id="1">
+                                        <i data-lucide="inbox" class="w-4 h-4 mr-1"></i> View Submissions
+                                    </button>
+                                    <button class="edit-assignment-btn flex-1 flex items-center justify-center bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition text-sm" data-assignment-id="1">
+                                        <i data-lucide="edit" class="w-4 h-4 mr-1"></i> Edit
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Quiz Card 2 -->
+                            <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                                <!-- CRITICAL UPDATE: items-center centers the due date badge vertically -->
+                                <div class="flex justify-between items-center mb-3">
+                                    <div class="flex items-center space-x-2">
+                                        <i data-lucide="clipboard-check" class="w-6 h-6 text-orange-600"></i>
+                                        <h3 class="text-lg font-bold text-gray-800">Networking Basics Quiz</h3>
+                                    </div>
+                                    <span class="text-xs font-semibold text-red-500 bg-red-100 px-2 py-1 rounded-full">Due: 1/24/2025</span>
+                                </div>
+                                <p class="text-sm font-semibold text-orange-600 mb-3">QUIZ</p>
+                                <p class="text-sm text-gray-600 mb-4">Short MCQ on OSI Model layers and protocols.</p>
+                                
+                                <div class="text-sm text-gray-700 mb-2">
+                                    <span class="font-bold">20 Marks</span>
+                                    <span class="float-right text-green-600 font-semibold">28/30 Attempted (93%)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 93%"></div>
+                                </div>
+                                <div class="flex space-x-3">
+                                    <button class="view-submissions-btn flex-1 flex items-center justify-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition text-sm" data-assignment-id="2">
+                                        <i data-lucide="inbox" class="w-4 h-4 mr-1"></i> View Results
+                                    </button>
+                                    <button class="edit-assignment-btn flex-1 flex items-center justify-center bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition text-sm" data-assignment-id="2">
+                                        <i data-lucide="edit" class="w-4 h-4 mr-1"></i> Edit
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FEEDBACK VIEW -->
+                    <div id="feedback-view" class="content-view hidden">
+                        <h2 class="text-3xl font-bold text-gray-800 mb-6">Student Feedback (Recent)</h2>
+
+                        <div id="feedback-list" class="space-y-6">
+                            <!-- Feedback Card 1 -->
+                            <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                                <div class="flex justify-between items-start mb-3 border-b pb-3">
+                                    <h3 class="text-lg font-bold text-gray-800">Anonymous Student</h3>
+                                    <div class="flex items-center text-yellow-500">
+                                        <i data-lucide="star" class="w-4 h-4 fill-yellow-500"></i>
+                                        <i data-lucide="star" class="w-4 h-4 fill-yellow-500"></i>
+                                        <i data-lucide="star" class="w-4 h-4 fill-yellow-500"></i>
+                                        <i data-lucide="star" class="w-4 h-4 fill-yellow-500"></i>
+                                        <i data-lucide="star-half" class="w-4 h-4 fill-yellow-500"></i>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-gray-500 mb-4">Subject: Mathematics • Date: 2025-02-01</p>
+
+                                <div class="mb-4 p-3 bg-gray-100 rounded-lg">
+                                    <p class="font-semibold text-gray-700 mb-1 flex items-center">
+                                        <i data-lucide="message-square" class="w-4 h-4 mr-2 text-blue-500"></i> Comments
+                                    </p>
+                                    <p class="text-sm text-gray-600">The class pace is too fast on Thursdays. Could we slow down the derivation part a little?</p>
+                                </div>
+
+                                <div class="p-3 bg-blue-50 rounded-lg">
+                                    <p class="font-semibold text-gray-700 mb-1 flex items-center">
+                                        <i data-lucide="lightbulb" class="w-4 h-4 mr-2 text-yellow-600"></i> Suggestions
+                                    </p>
+                                    <p class="text-sm text-gray-600">Suggest dedicating 10 minutes for Q&A at the end of the lecture.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Modal for Adding Subject/Syllabus -->
+    <div id="add-subject-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center p-4 z-50 transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 transform transition-all duration-300 scale-95">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Add New Subject & Syllabus</h3>
+                <button id="close-modal-button" class="p-2 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <form id="add-subject-form">
+                <div class="mb-6">
+                    <label for="subject-name" class="block text-sm font-medium text-gray-700 mb-1">Subject Name</label>
+                    <input type="text" id="subject-name" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., Computer Science, Mathematics, Physics" required>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/50">
+                    Add Subject
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Custom Message Alert Modal -->
+    <div id="custom-alert-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 z-50 transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 transform transition-all duration-300 scale-95">
+            <h4 id="alert-title" class="text-lg font-bold text-blue-600 mb-3">Confirmation</h4>
+            <p id="alert-message" class="text-gray-700 mb-6">Subject added successfully!</p>
+            <button id="close-alert-button" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700">OK</button>
+        </div>
+    </div>
+
+
+    <script type="module">
+        // --- Global State and Data ---
+        let currentView = 'syllabus'; 
+        // These variables read from localStorage, which is where the login page MUST store the data.
+        let teacherEmail = localStorage.getItem('userEmail') || 'dr.janedoe@eduva.com';
+        let teacherName = teacherEmail.split('@')[0].toUpperCase().replace('.', ' ');
+        let subjects = []; // In-memory array to store subjects
+        let dailyEntries = []; // In-memory array to store daily entries
+        
+        // Add some sample data for testing
+        if (subjects.length === 0) {
+            subjects = [
+                {
+                    id: 1,
+                    name: "Mathematics",
+                    topics: [
+                        {
+                            id: 1,
+                            title: "Calculus - Derivatives",
+                            description: "Introduction to derivatives and their applications",
+                            duration: "4 hours",
+                            completed: true
+                        },
+                        {
+                            id: 2,
+                            title: "Calculus - Integrals",
+                            description: "Integration techniques and applications",
+                            duration: "6 hours",
+                            completed: false
+                        },
+                        {
+                            id: 3,
+                            title: "Linear Algebra",
+                            description: "Matrices, vectors, and linear transformations",
+                            duration: "8 hours",
+                            completed: false
+                        }
+                    ]
+                },
+                {
+                    id: 2,
+                    name: "Physics",
+                    topics: [
+                        {
+                            id: 4,
+                            title: "Electromagnetic Waves",
+                            description: "Properties and behavior of electromagnetic radiation",
+                            duration: "5 hours",
+                            completed: true
+                        },
+                        {
+                            id: 5,
+                            title: "Quantum Mechanics",
+                            description: "Introduction to quantum theory",
+                            duration: "10 hours",
+                            completed: false
+                        }
+                    ]
+                }
+            ];
+        }
+
+        // --- Core Functions ---
+        
+        /**
+         * Handles the exit button click by resetting local storage and replacing the UI.
+         */
+        const handleExit = () => {
+            // Clear stored credentials
+            localStorage.removeItem('userToken');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('userRole');
+            
+            // Replace the entire body content with a safe logged-out message
+            document.getElementById('main-body').innerHTML = `
+                <div class="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-6 text-center">
+                    <i data-lucide="log-out" class="w-12 h-12 text-blue-600 mb-4"></i>
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">Successfully Logged Out</h1>
+                    <p class="text-gray-600 mb-6">Your session has ended. To log back in, please reload the page.</p>
+                    <button onclick="window.location.reload()" class="bg-blue-600 text-white py-2 px-6 rounded-full font-semibold hover:bg-blue-700 transition duration-150 shadow-lg">
+                        Reload Application
+                    </button>
+                </div>
+            `;
+            // Re-render lucide icons for the new content
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
+        };
+
+        /**
+         * Renders the current view by toggling the 'hidden' class on content containers.
+         */
+        const renderView = () => {
+            document.querySelectorAll('.content-view').forEach(view => {
+                view.classList.add('hidden');
+            });
+            document.getElementById(`${currentView}-view`).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.dataset.view === currentView) {
+                    tab.classList.add('active');
+                }
+            });
+            
+            // Re-render icons after DOM manipulation
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
+        };
+        
+        /**
+         * Renders the list of subjects dynamically and updates the tracker dropdown.
+         */
+        const renderSubjectList = () => {
+            const dynamicContainer = document.getElementById('dynamic-subjects');
+            const trackerSelect = document.getElementById('entry-subject');
+            
+            // Clear existing dynamic content 
+            dynamicContainer.innerHTML = '';
+            
+            // Update tracker dropdown with all subjects
+            trackerSelect.innerHTML = '<option value="" disabled selected>Select Subject</option>';
+            subjects.forEach(subject => {
+                const option = document.createElement('option');
+                option.value = subject.name;
+                option.textContent = subject.name;
+                trackerSelect.appendChild(option);
+            });
+
+            // Only render dynamic subjects if there are more than the 2 sample ones
+            const additionalSubjects = subjects.slice(2); // Skip the first 2 (Mathematics and Physics)
+            
+            if (additionalSubjects.length === 0) {
+                return; // Keep the sample cards
+            }
+
+            // Dynamically add additional subject cards
+            additionalSubjects.forEach(subject => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-6 rounded-xl shadow-lg border border-gray-200";
+                
+                // Build topics HTML
+                const topicsHtml = subject.topics.map(topic => `
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-5 h-5 ${topic.completed ? 'bg-green-500 rounded-full flex items-center justify-center' : 'border-2 border-gray-300 rounded-full'} mt-1">
+                                ${topic.completed ? '<i data-lucide="check" class="w-3 h-3 text-white"></i>' : ''}
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="font-semibold ${topic.completed ? 'text-green-600 line-through' : 'text-gray-800'}">${topic.title}</h4>
+                                <p class="text-sm text-gray-600 mt-1">${topic.description}</p>
+                                <p class="text-xs text-gray-500 mt-1">${topic.duration}</p>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-center mb-4 border-b pb-3">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="book" class="w-6 h-6 text-blue-500"></i>
+                            <h3 class="text-xl font-bold text-gray-800">${subject.name}</h3>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button class="text-blue-500 hover:text-blue-700 transition" onclick="addTopic(${subject.id})">
+                                <i data-lucide="plus" class="w-5 h-5"></i>
+                            </button>
+                            <button class="text-gray-500 hover:text-red-600 transition" onclick="removeSubject(${subject.id})">
+                                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        ${topicsHtml}
+                    </div>
+                `;
+                dynamicContainer.appendChild(card);
+            });
+            
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
+        };
+        
+        // Delete subject function
+        window.deleteSubject = (subjectId) => {
+            if (confirm('Are you sure you want to delete this subject? This will also delete all its topics.')) {
+                subjects = subjects.filter(s => s.id !== subjectId);
+                renderAllSubjectCards();
+                renderSubjectList(); // Update dropdown
+                showAlert("Subject Deleted", "The subject and all its topics have been removed.", 'trash', 'red');
+            }
+        };
+
+        // Delete topic function
+        window.deleteTopic = (subjectId, topicId) => {
+            if (confirm('Are you sure you want to delete this topic?')) {
+                const subject = subjects.find(s => s.id === subjectId);
+                if (subject) {
+                    subject.topics = subject.topics.filter(t => t.id !== topicId);
+                    renderAllSubjectCards();
+                    showAlert("Topic Deleted", "The topic has been removed.", 'trash', 'red');
+                }
+            }
+        };
+
+        // Legacy function for backward compatibility
+        window.removeSubject = window.deleteSubject;
+
+        // Expose a global function for adding topics
+        window.addTopic = (subjectId) => {
+            const subject = subjects.find(s => s.id === subjectId);
+            if (subject) {
+                const topicTitle = prompt("Enter topic title:");
+                const topicDescription = prompt("Enter topic description:");
+                const topicDuration = prompt("Enter topic duration (e.g., '4 hours'):");
+                
+                if (topicTitle && topicDescription && topicDuration) {
+                    const newTopic = {
+                        id: Date.now(),
+                        title: topicTitle,
+                        description: topicDescription,
+                        duration: topicDuration,
+                        completed: false
+                    };
+                    subject.topics.push(newTopic);
+                    renderSubjectList();
+                    showAlert("Topic Added", "New topic has been added successfully.", 'check-circle', 'green');
+                }
+            }
+        };
+
+        // Toggle topic completion status
+        window.toggleTopicCompletion = (subjectId, topicId) => {
+            const subject = subjects.find(s => s.id === subjectId);
+            if (subject) {
+                const topic = subject.topics.find(t => t.id === topicId);
+                if (topic) {
+                    topic.completed = !topic.completed;
+                    renderAllSubjectCards();
+                }
+            }
+        };
+
+        // Show add topic form
+        window.showAddTopicForm = (subjectId) => {
+            const form = document.getElementById('add-topic-form');
+            const subjectSelect = document.getElementById('topic-subject');
+            
+            // Populate subject dropdown
+            subjectSelect.innerHTML = '<option value="" disabled selected>Select Subject</option>';
+            subjects.forEach(subject => {
+                const option = document.createElement('option');
+                option.value = subject.id;
+                option.textContent = subject.name;
+                if (subject.id === subjectId) {
+                    option.selected = true;
+                }
+                subjectSelect.appendChild(option);
+            });
+            
+            form.classList.remove('hidden');
+        };
+
+        // Render all subject cards dynamically
+        const renderAllSubjectCards = () => {
+            const dynamicContainer = document.getElementById('dynamic-subjects');
+            
+            // Clear existing content
+            dynamicContainer.innerHTML = '';
+            
+            // Show empty message if no subjects
+            if (subjects.length === 0) {
+                dynamicContainer.innerHTML = '<div class="col-span-2 text-center py-12"><p class="text-gray-500 text-lg">No subjects added yet. Click "Add Subject" to get started!</p></div>';
+                return;
+            }
+            
+            // Render all subjects dynamically
+            subjects.forEach(subject => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-6 rounded-xl shadow-lg border border-gray-200";
+                
+                // Build topics HTML
+                const topicsHtml = subject.topics.map(topic => `
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="flex items-start space-x-3">
+                            <button class="w-5 h-5 ${topic.completed ? 'bg-green-500 rounded-full flex items-center justify-center hover:bg-green-600' : 'border-2 border-gray-300 rounded-full hover:border-gray-400'} mt-1 transition cursor-pointer" onclick="toggleTopicCompletion(${subject.id}, ${topic.id})">
+                                ${topic.completed ? '<i data-lucide="check" class="w-3 h-3 text-white"></i>' : ''}
+                            </button>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <h4 class="font-semibold ${topic.completed ? 'text-green-600 line-through' : 'text-gray-800'}">${topic.title}</h4>
+                                        <p class="text-sm text-gray-600 mt-1">${topic.description}</p>
+                                        <p class="text-xs text-gray-500 mt-1">${topic.duration}</p>
+                                    </div>
+                                    <button class="text-red-500 hover:text-red-700 transition ml-2" onclick="deleteTopic(${subject.id}, ${topic.id})" title="Delete topic">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-center mb-4 border-b pb-3">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="book" class="w-6 h-6 text-blue-500"></i>
+                            <h3 class="text-xl font-bold text-gray-800">${subject.name}</h3>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button class="text-blue-500 hover:text-blue-700 transition" onclick="showAddTopicForm(${subject.id})" title="Add topic">
+                                <i data-lucide="plus" class="w-5 h-5"></i>
+                            </button>
+                            <button class="text-red-500 hover:text-red-700 transition" onclick="deleteSubject(${subject.id})" title="Delete subject">
+                                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        ${topicsHtml}
+                        ${subject.topics.length === 0 ? '<p class="text-gray-500 text-sm italic text-center py-4">No topics added yet. Click the + button to add topics.</p>' : ''}
+                    </div>
+                `;
+                dynamicContainer.appendChild(card);
+            });
+            
+            // Re-render icons
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
+        };
+
+        /**
+         * Renders the list of daily entries dynamically.
+         */
+        const renderDailyEntries = () => {
+            const listContainer = document.getElementById('tracker-list');
+            
+            // Clear existing content except the first example card
+            const existingCards = listContainer.querySelectorAll('.daily-entry-card');
+            existingCards.forEach(card => card.remove());
+
+            if (dailyEntries.length === 0) {
+                return; // Keep the example card if no entries
+            }
+
+            // Add daily entry cards
+            dailyEntries.forEach(entry => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-6 rounded-xl shadow-lg border border-gray-200 daily-entry-card";
+                
+                const topicsList = entry.topics.split(',').map(topic => 
+                    `<li class="flex items-center text-green-600"><i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> ${topic.trim()}</li>`
+                ).join('');
+
+                card.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="col-span-1 border-r border-gray-100 pr-4">
+                            <h3 class="text-xl font-bold text-gray-800 mb-2 flex items-center">
+                                <i data-lucide="book" class="w-5 h-5 mr-2 text-blue-500"></i> ${entry.subject}
+                            </h3>
+                            <p class="text-sm font-semibold text-gray-500 mb-2">DATE: ${entry.date}</p>
+                            <p class="text-sm text-gray-500">28 students • ${entry.topics.split(',').length} topics</p>
+                        </div>
+                        <div class="col-span-2 pl-4">
+                            <p class="text-sm font-semibold text-gray-600 mb-2">Topics Covered</p>
+                            <ul class="list-none space-y-1 text-sm text-gray-700">
+                                ${topicsList}
+                            </ul>
+                            
+                            <p class="text-sm font-semibold text-gray-600 mt-4 mb-2">Teacher Notes</p>
+                            <p class="text-sm text-gray-600 mb-4 p-3 bg-gray-50 rounded-lg">${entry.notes || 'No additional notes.'}</p>
+                            
+                            <button class="upload-notes-btn flex items-center text-sm font-medium hover:text-blue-700">
+                                <i data-lucide="upload-cloud" class="w-4 h-4 mr-1"></i> Upload Notes File
+                            </button>
+                        </div>
+                    </div>
+                `;
+                listContainer.prepend(card); // Add new entries to the top
+            });
+            
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
+        };
+
+        /**
+         * Handles saving a daily entry.
+         */
+        const handleSaveDailyEntry = () => {
+            const date = document.getElementById('entry-date').value;
+            const subject = document.getElementById('entry-subject').value;
+            const topics = document.getElementById('entry-topics').value.trim();
+            const notes = document.getElementById('entry-notes').value.trim();
+
+            if (!date || !subject || !topics) {
+                showAlert("Missing Information", "Please fill in all required fields (Date, Subject, Topics).", 'alert-triangle', 'red');
+                return;
+            }
+
+            const newEntry = {
+                id: Date.now(),
+                date: date,
+                subject: subject,
+                topics: topics,
+                notes: notes
+            };
+
+            dailyEntries.push(newEntry);
+            renderDailyEntries();
+            
+            // Reset form and hide it
+            document.getElementById('daily-entry-form').reset();
+            document.getElementById('daily-entry-form').classList.add('hidden');
+            document.getElementById('entry-date').valueAsDate = new Date(); // Reset to today's date
+            
+            showAlert("Success!", "Daily entry has been saved successfully.", 'check-circle', 'green');
+        };
+
+        // --- UI Interactions ---
+
+        /**
+         * Shows a custom alert message.
+         */
+        const showAlert = (title, message, icon='check-circle', color='blue') => {
+            document.getElementById('alert-title').textContent = title;
+            document.getElementById('alert-message').textContent = message;
+            
+            const titleElement = document.getElementById('alert-title');
+            titleElement.className = `text-lg font-bold mb-3 text-${color}-600`;
+
+            const modal = document.getElementById('custom-alert-modal');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.querySelector('div').classList.remove('scale-95');
+        };
+
+        const hideAlert = () => {
+            const modal = document.getElementById('custom-alert-modal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('div').classList.add('scale-95');
+        };
+
+        const showAddSubjectModal = () => {
+            const modal = document.getElementById('add-subject-modal');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.querySelector('div').classList.remove('scale-95');
+        };
+
+        const hideAddSubjectModal = () => {
+            const modal = document.getElementById('add-subject-modal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('div').classList.add('scale-95');
+            document.getElementById('add-subject-form').reset(); 
+        };
+
+        const showAddTopicFormModal = () => {
+            const form = document.getElementById('add-topic-form');
+            form.classList.remove('hidden');
+        };
+
+        const hideAddTopicForm = () => {
+            const form = document.getElementById('add-topic-form');
+            form.classList.add('hidden');
+            // Reset form
+            document.getElementById('topic-subject').value = '';
+            document.getElementById('topic-name').value = '';
+            document.getElementById('topic-description').value = '';
+            document.getElementById('topic-duration').value = '';
+        };
+
+        const handleSaveTopic = () => {
+            const subjectId = parseInt(document.getElementById('topic-subject').value);
+            const topicName = document.getElementById('topic-name').value.trim();
+            const topicDescription = document.getElementById('topic-description').value.trim();
+            const topicDuration = document.getElementById('topic-duration').value;
+
+            if (!subjectId || !topicName || !topicDescription || !topicDuration) {
+                showAlert("Missing Information", "Please fill in all fields.", 'alert-triangle', 'red');
+                return;
+            }
+
+            const subject = subjects.find(s => s.id === subjectId);
+            if (subject) {
+                const newTopic = {
+                    id: Date.now(),
+                    title: topicName,
+                    description: topicDescription,
+                    duration: topicDuration + ' hours',
+                    completed: false
+                };
+                subject.topics.push(newTopic);
+                renderAllSubjectCards();
+                renderSubjectList(); // Update dropdown
+                hideAddTopicForm();
+                showAlert("Topic Added", "New topic has been added successfully.", 'check-circle', 'green');
+            }
+        };
+
+        const handleAddSubject = (e) => {
+            e.preventDefault();
+            
+            const subjectName = document.getElementById('subject-name').value.trim();
+
+            if (!subjectName) {
+                showAlert("Missing Information", "Please enter the Subject Name.", 'alert-triangle', 'red');
+                return;
+            }
+
+            const newSubject = {
+                id: Date.now(), 
+                name: subjectName,
+                topics: [] // Start with empty topics array
+            };
+
+            subjects.push(newSubject);
+            
+            renderAllSubjectCards();
+            renderSubjectList(); // Update dropdown
+            hideAddSubjectModal();
+            showAlert("Success!", `Subject "${subjectName}" has been added successfully.`);
+        };
+
+        /**
+         * Handles the class/semester selection logic.
+         */
+        const handleClassSelect = (event) => {
+            const selectedClass = event.target.value;
+            const selectElement = event.target;
+            
+            if (selectedClass) {
+                selectElement.classList.add('class-select-active');
+            } else {
+                selectElement.classList.remove('class-select-active');
+            }
+        };
+        
+        const toggleDailyEntryForm = () => {
+            const form = document.getElementById('daily-entry-form');
+            form.classList.toggle('hidden');
+        };
+        
+        const handleAssignmentAction = (e) => {
+            let button = e.target;
+            // Traverse up to find the actual button element if an icon/text was clicked
+            while (button && !button.matches('button')) {
+                button = button.parentElement;
+            }
+            if (!button) return;
+
+            const action = button.classList.contains('view-submissions-btn') ? 'View Submissions/Results' : 'Edit Assignment';
+            const assignmentId = button.dataset.assignmentId;
+            const assignmentTitle = button.closest('.bg-white').querySelector('h3').textContent;
+
+            showAlert(
+                `${action} Action`, 
+                `Functionality for "${action}" for assignment "${assignmentTitle}" (ID: ${assignmentId}) will be implemented soon!`,
+                'info',
+                'purple'
+            );
+        };
+        
+        const handleCreateNewAssignment = () => {
+             showAlert(
+                "Create New Action", 
+                "The 'Create New Assignment/Quiz' form will be added here for creation functionality.",
+                'plus-circle',
+                'purple'
+            );
+        };
+
+
+        // --- Application Initialization ---
+
+        /**
+         * Runs if authentication check passes. Sets up all listeners and renders content.
+         */
+        const initApp = () => {
+            // Hide loading screen, show dashboard container
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('dashboard-container').classList.remove('hidden');
+
+            // 1. Update header with teacher's name
+            teacherEmail = localStorage.getItem('userEmail');
+            teacherName = teacherEmail.split('@')[0].replace(/\b\w/g, c => c.toUpperCase()).replace('.', ' '); // Convert to proper case
+            document.getElementById('teacher-name').textContent = `${teacherName} (teacher)`;
+
+            // 2. Render initial view and data
+            renderView();
+            renderSubjectList(); // Update dropdown
+            renderAllSubjectCards(); // Render all subject cards dynamically
+            renderDailyEntries(); // Render daily entries
+            document.getElementById('entry-date').valueAsDate = new Date(); // Set today's date
+
+            // 3. Attach Event Listeners
+            
+            // Exit Button
+            document.getElementById('exit-button').addEventListener('click', handleExit);
+            
+            // Navigation Tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    currentView = tab.dataset.view;
+                    renderView();
+                });
+            });
+
+            // Class/Semester Dropdown
+            document.getElementById('class-semester-select').addEventListener('change', handleClassSelect);
+
+            // Syllabus Modal Logic
+            document.getElementById('add-subject-button').addEventListener('click', showAddSubjectModal);
+            document.getElementById('close-modal-button').addEventListener('click', hideAddSubjectModal);
+            document.getElementById('add-subject-form').addEventListener('submit', handleAddSubject);
+            
+            // Close modal when clicking outside (on the overlay)
+            document.getElementById('add-subject-modal').addEventListener('click', (e) => {
+                if (e.target.id === 'add-subject-modal') {
+                    hideAddSubjectModal();
+                }
+            });
+            
+            // Custom Alert Logic
+            document.getElementById('close-alert-button').addEventListener('click', hideAlert);
+            
+            // Daily Tracker Form Toggle
+            document.getElementById('add-entry-button').addEventListener('click', toggleDailyEntryForm);
+            document.getElementById('cancel-entry-button').addEventListener('click', toggleDailyEntryForm);
+            document.getElementById('save-entry-button').addEventListener('click', handleSaveDailyEntry);
+            
+            // Topic Form Toggle
+            document.getElementById('cancel-topic-button').addEventListener('click', hideAddTopicForm);
+            document.getElementById('save-topic-button').addEventListener('click', handleSaveTopic);
+            
+            // Assignments View Actions
+            document.getElementById('create-new-assignment-button').addEventListener('click', handleCreateNewAssignment);
+            document.querySelectorAll('.view-submissions-btn, .edit-assignment-btn').forEach(button => {
+                button.addEventListener('click', handleAssignmentAction);
+            });
+            
+            // Final icon render
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
+        };
+
+
+        /**
+         * Checks user role and either initializes the app or logs out.
+         */
+        const checkAuthAndInit = () => {
+            // Must attach exit listener immediately, regardless of auth state
+            document.getElementById('exit-button').addEventListener('click', handleExit);
+
+            let userRole = localStorage.getItem('userRole');
+            
+            // If credentials are not set (e.g., loading in isolation), set defaults to allow the dashboard to load as a teacher.
+            if (!userRole) {
+                // FALLBACK ONLY: In a real app, the user would be redirected to the login page.
+                console.warn("No authentication data found. Setting default 'teacher' role for testing.");
+                localStorage.setItem('userRole', 'teacher');
+                localStorage.setItem('userEmail', 'sarah.johnson@eduva.com'); 
+                localStorage.setItem('userToken', 'fake-token-123');
+                userRole = 'teacher'; 
+            }
+
+            if (userRole === 'teacher') {
+                initApp();
+            } else {
+                // Fails authentication check 
+                console.error("Authentication failed. Invalid role for this dashboard.");
+                handleExit();
+            }
+        };
+        
+        // Start the application when the window loads
+        window.onload = checkAuthAndInit;
+
+    </script>
+</body>
+</html>
