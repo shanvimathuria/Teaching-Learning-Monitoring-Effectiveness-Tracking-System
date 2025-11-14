@@ -365,7 +365,7 @@ app.use(express.static('public'));
 
 // Default route
 app.get('/', (req, res) => {
-  res.redirect('/teacher-dashboard.html');
+  res.redirect('/tec.html');
 });
 
 app.listen(PORT, () => {

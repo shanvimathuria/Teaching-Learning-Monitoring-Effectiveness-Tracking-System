@@ -302,100 +302,38 @@
     </div>
 
 <script type="module">
+  // ---------- API base ----------
+  const API_BASE = ''; // '' means same origin. change to 'http://localhost:4000' if backend on different origin.
+
+  async function apiFetch(path, opts = {}) {
+    const res = await fetch(`${API_BASE}${path}`, {
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      ...opts
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(()=>null);
+      throw new Error(`API ${path} failed: ${res.status} ${res.statusText} ${text||''}`);
+    }
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) return null;
+    return res.json();
+  }
+
   // -------------------------
   // GLOBAL STATE
   // -------------------------
-  // Use a map to hold class-specific data
-  let currentClassId = 1; // Default selected class
-  
-  // Structure: { classId: { subjects: [], assignments: [], tracker: [] } }
-  let classData = {
-    1: { // B.TECH CSE - Sem II
-      subjects: [
-        {
-          id: 1,
-          name: "Mathematics",
-          topics: [
-            { id: 1, title: "Calculus - Derivatives", description: "Introduction to derivatives and their applications", duration: "4 hours", completed: true },
-            { id: 2, title: "Calculus - Integrals", description: "Integration techniques and applications", duration: "6 hours", completed: false },
-            { id: 3, title: "Linear Algebra", description: "Matrices, vectors, and linear transformations", duration: "8 hours", completed: false }
-          ]
-        },
-        {
-          id: 2,
-          name: "Physics",
-          topics: [
-            { id: 4, title: "Electromagnetic Waves", description: "Properties and behavior of electromagnetic radiation", duration: "5 hours", completed: true },
-            { id: 5, title: "Quantum Mechanics", description: "Introduction to quantum theory", duration: "10 hours", completed: false }
-          ]
-        }
-      ],
-      assignments: [
-        {
-          id: 101, title: "Calculus Problem Set 1", type: "ASSIGNMENT", subject: "Mathematics",
-          description: "Solve problems related to derivatives and their applications",
-          marks: 50, due: "2025-01-25", totalStudents: 30, submitted: 22
-        },
-        {
-          id: 102, title: "Wave Physics Quiz", type: "QUIZ", subject: "Physics",
-          description: "Multiple choice quiz on electromagnetic wave properties",
-          marks: 25, due: "2025-01-24", totalStudents: 30, submitted: 28
-        }
-      ],
-      tracker: [
-        {
-          id: 201, date: "2025-01-22", subject: "Mathematics", studentsPresent: 28,
-          topicsCovered: ["Derivatives", "Chain Rule"],
-          notes: "Students struggled with chain rule applications. Need more practice examples.",
-          notesFile: "math_notes_jan22.pdf"
-        },
-        {
-          id: 202, date: "2025-01-21", subject: "Physics", studentsPresent: 30,
-          topicsCovered: ["Electromagnetic Waves"],
-          notes: "Excellent engagement. Students understood wave properties well.",
-          notesFile: null
-        }
-      ]
-    },
-    2: { // B.TECH CSE AIML - Sem II (Placeholder Data)
-        subjects: [{ id: 3, name: "AI Fundamentals", topics: [] }],
-        assignments: [],
-        tracker: [{
-          id: 203, date: "2025-02-01", subject: "AI Fundamentals", studentsPresent: 25,
-          topicsCovered: ["Introduction to ML", "Supervised Learning"],
-          notes: "Fast learners. Plan a coding assignment for next week.",
-          notesFile: null
-        }]
-    },
-    3: { // B.TECH CSE - Sem IV (Empty Data)
-        subjects: [],
-        assignments: [],
-        tracker: []
-    },
-    4: { // B.TECH CSE AIML - Sem IV (Empty Data)
-        subjects: [],
-        assignments: [],
-        tracker: []
-    }
-  };
+  let currentClassId = null;
 
+  // default local fallback sample data (used only if server unreachable)
   let classes = [
-    { id: 1, label: "B.TECH CSE - Sem II", totalStudents: 30 },
-    { id: 2, label: "B.TECH CSE AIML - Sem II", totalStudents: 25 },
-    { id: 3, label: "B.TECH CSE - Sem IV", totalStudents: 32 },
-    { id: 4, label: "B.TECH CSE AIML - Sem IV", totalStudents: 28 }
+    { id: 1, label: "B.TECH CSE - Sem II", totalStudents: 30 }
   ];
 
-  // -------------------------
-  // DATA ACCESSORS
-  // -------------------------
-  function getCurrentData() {
-    return classData[currentClassId] || { subjects: [], assignments: [], tracker: [] };
-  }
-  
-  function getClasses() {
-      return classes;
-  }
+  // structure: { classId: { subjects: [], assignments: [], tracker: [] } }
+  let classData = {
+    1: { subjects: [], assignments: [], tracker: [] }
+  };
 
   // -------------------------
   // RENDER / UI HELPERS
@@ -403,30 +341,26 @@
   function renderClassSelect() {
     const select = document.getElementById('class-semester-select');
     select.innerHTML = '';
-    
-    // Add placeholder option
     const placeholder = document.createElement('option');
     placeholder.value = '';
     placeholder.disabled = true;
     placeholder.textContent = "Select a Class and Semester";
     select.appendChild(placeholder);
-    
-    // Add class options
+
     classes.forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.label;
       opt.textContent = c.label;
       opt.dataset.id = c.id;
-      opt.selected = c.id === currentClassId;
+      opt.selected = (currentClassId === c.id);
       select.appendChild(opt);
     });
 
-    // Manually trigger the select active styling for the initial state
     if (currentClassId) {
-        select.classList.add('class-select-active');
+      select.classList.add('class-select-active');
     } else {
-        select.classList.remove('class-select-active');
-        select.selectedIndex = 0; // Select placeholder if no class is active
+      select.classList.remove('class-select-active');
+      select.selectedIndex = 0;
     }
   }
 
@@ -448,14 +382,15 @@
     });
     if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
   }
-  
+
   // --- SYLLABUS RENDER ---
   function renderSubjects() {
     const container = document.getElementById('subject-list');
-    const { subjects } = getCurrentData();
+    const data = classData[currentClassId] || { subjects: [] };
+    const subjects = data.subjects || [];
     container.innerHTML = '';
 
-    if (subjects.length === 0) {
+    if (!subjects.length) {
       container.innerHTML = '<div class="col-span-2 text-center py-12"><p class="text-gray-500 text-lg">No subjects added yet. Click "Add Subject" to get started!</p></div>';
       return;
     }
@@ -464,7 +399,7 @@
       const card = document.createElement('div');
       card.className = "bg-white p-6 rounded-xl shadow-lg border border-gray-200";
 
-      const topicsHtml = subject.topics.map(topic => `
+      const topicsHtml = (subject.topics || []).map(topic => `
         <div class="bg-gray-50 p-4 rounded-lg">
           <div class="flex items-start space-x-3">
             <button class="w-5 h-5 ${topic.completed ? 'bg-green-500' : 'border-2 border-gray-300'} rounded-full flex items-center justify-center mt-1 transition cursor-pointer" onclick="toggleTopicCompletion(${subject.id}, ${topic.id})">
@@ -503,7 +438,7 @@
         </div>
         <div class="space-y-3">
           ${topicsHtml}
-          ${subject.topics.length === 0 ? '<p class="text-gray-500 text-sm italic text-center py-4">No topics added yet. Click the + button to add topics.</p>' : ''}
+          ${(!subject.topics || subject.topics.length === 0) ? '<p class="text-gray-500 text-sm italic text-center py-4">No topics added yet. Click the + button to add topics.</p>' : ''}
         </div>
       `;
       container.appendChild(card);
@@ -512,13 +447,13 @@
     if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
   }
 
-  // --- ASSIGNMENT RENDER ---
+  // --- ASSIGNMENTS RENDER ---
   function renderAssignments() {
     const container = document.getElementById('assignment-list');
-    const { assignments } = getCurrentData();
+    const assignments = (classData[currentClassId] && classData[currentClassId].assignments) || [];
     container.innerHTML = '';
-    
-    if (assignments.length === 0) {
+
+    if (!assignments.length) {
         container.innerHTML = '<div class="col-span-2 text-center py-12"><p class="text-gray-500 text-lg">No assignments/quizzes created for this class yet. Click "Create New" to get started!</p></div>';
         return;
     }
@@ -570,24 +505,21 @@
     });
     if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
   }
-  
+
   // --- TRACKER RENDER ---
   function renderTrackerEntries() {
       const container = document.getElementById('tracker-entries');
-      const { tracker } = getCurrentData();
-      const currentClass = getClasses().find(c => c.id === currentClassId);
+      const tracker = (classData[currentClassId] && classData[currentClassId].tracker) || [];
       container.innerHTML = '';
       
-      if (tracker.length === 0) {
-          container.innerHTML = '<div class="text-center py-12"><p class="text-gray-500 text-lg">No daily progress entries for this class yet. Click "Add Today\'s Entry" to get started!</p></div>';
+      if (!tracker.length) {
+          container.innerHTML = '<div class="text-center py-12"><p class="text-gray-500 text-lg">No daily progress entries for this class yet. Click "Add Today\\\'s Entry" to get started!</p></div>';
           return;
       }
       
-      // Sort by date descending
       const sortedTracker = [...tracker].sort((a, b) => new Date(b.date) - new Date(a.date));
-
       sortedTracker.forEach(t => {
-          const topicsHtml = t.topicsCovered.map(topic => `
+          const topicsHtml = (t.topicsCovered || []).map(topic => `
               <li class="flex items-center text-sm text-gray-700">
                   <i data-lucide="check-circle" class="w-4 h-4 text-green-500 mr-2 flex-shrink-0"></i> ${topic}
               </li>
@@ -644,7 +576,7 @@
   }
 
   // -------------------------
-  // CLASS MANAGEMENT LOGIC
+  // UI / Modal helpers
   // -------------------------
   function openManageClassesModal() {
     document.getElementById('manage-classes-modal').classList.remove('hidden');
@@ -654,81 +586,15 @@
     document.getElementById('manage-classes-modal').classList.add('hidden');
     document.getElementById('new-class-input').value = '';
   }
-  function addClassConfirm() {
-    const label = document.getElementById('new-class-input').value.trim();
-    if (!label) return;
-    const newId = Date.now();
-    
-    // Add to classes array
-    classes.push({ id: newId, label: label, totalStudents: 30 }); // Default students to 30
-    
-    // Initialize data structure for the new class
-    classData[newId] = { subjects: [], assignments: [], tracker: [] };
-    
-    renderClassSelect();
-    renderClassListInModal();
-    document.getElementById('new-class-input').value = '';
-  }
-  function deleteClass(id) {
-    if (!confirm('Delete this class? This will also delete all associated Syllabus, Assignments, and Tracker data!')) return;
-    
-    // Remove from classes array
-    classes = classes.filter(c => c.id !== id);
-    
-    // Remove from classData structure
-    delete classData[id];
-    
-    // Update currentClassId if the deleted class was active
-    if (currentClassId === id) {
-        currentClassId = classes.length > 0 ? classes[0].id : null;
-    }
-    
-    renderClassSelect();
-    renderClassListInModal();
-    renderAllContent(); // Re-render content for the new active class
-  }
-  
-  function handleClassChange(e) {
-      const select = e.target;
-      const selectedOption = select.options[select.selectedIndex];
-      const newClassId = parseInt(selectedOption.dataset.id);
-      
-      if (currentClassId !== newClassId) {
-          currentClassId = newClassId;
-          renderAllContent();
-      }
-      
-      // Apply/remove active style
-      if (select.value) select.classList.add('class-select-active');
-      else select.classList.remove('class-select-active');
-  }
-
-  // -------------------------
-  // CORE CONTENT LOGIC (SUBJECTS, ASSIGNMENTS, TRACKER)
-  // -------------------------
-  
-  function renderAllContent() {
-      // Calls all render functions based on the currentClassId
-      renderSubjects();
-      renderAssignments();
-      renderTrackerEntries();
-      if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
-  }
-
-  // --- SYLLABUS LOGIC ---
-
   function showAddSubjectModal() { document.getElementById('add-subject-modal').classList.remove('hidden'); }
   function hideAddSubjectModal() { document.getElementById('add-subject-modal').classList.add('hidden'); document.getElementById('subject-name').value = ''; }
-
   function openAddTopicModal(subjectId) {
     document.getElementById('add-topic-modal').classList.remove('hidden');
-    // populate subject select with current class's subjects
     const sel = document.getElementById('topic-subject-select');
     sel.innerHTML = '';
-    getCurrentData().subjects.forEach(s => {
+    (classData[currentClassId] && classData[currentClassId].subjects || []).forEach(s => {
       const opt = document.createElement('option'); opt.value = s.id; opt.textContent = s.name; sel.appendChild(opt);
     });
-    // set selected subject
     sel.value = subjectId;
   }
   function hideAddTopicModal() {
@@ -737,135 +603,239 @@
     document.getElementById('topic-desc').value = '';
     document.getElementById('topic-duration').value = '';
   }
-
-  function deleteSubject(id) {
-    if (!confirm('Delete this subject and all its topics?')) return;
-    const data = getCurrentData();
-    data.subjects = data.subjects.filter(s => s.id !== id);
-    renderSubjects();
-  }
-
-  function deleteTopic(subjectId, topicId) {
-    const data = getCurrentData();
-    const subj = data.subjects.find(s => s.id === subjectId);
-    if (!subj) return;
-    subj.topics = subj.topics.filter(t => t.id !== topicId);
-    renderSubjects();
-  }
-
-  function toggleTopicCompletion(subjectId, topicId) {
-    const data = getCurrentData();
-    const subj = data.subjects.find(s => s.id === subjectId);
-    if (!subj) return;
-    const topic = subj.topics.find(t => t.id === topicId);
-    if (!topic) return;
-    topic.completed = !topic.completed;
-    renderSubjects();
-  }
-
-  // add subject (from modal)
-  document.getElementById('add-subject-button').addEventListener('click', showAddSubjectModal);
-  document.getElementById('add-subject-form').addEventListener('submit', function(e){
-    e.preventDefault();
-    const name = document.getElementById('subject-name').value.trim();
-    if (!name) return;
-    getCurrentData().subjects.push({ id: Date.now(), name, topics: [] });
-    hideAddSubjectModal();
-    renderSubjects();
-  });
-
-  // Add topic from modal confirmation
-  function confirmAddTopic() {
-    const subjId = parseInt(document.getElementById('topic-subject-select').value);
-    const title = document.getElementById('topic-title').value.trim();
-    const desc = document.getElementById('topic-desc').value.trim();
-    const dur = document.getElementById('topic-duration').value.trim();
-    if (!subjId || !title || !desc || !dur) return;
-    const subj = getCurrentData().subjects.find(s => s.id === subjId);
-    subj.topics.push({ id: Date.now(), title, description: desc, duration: dur, completed: false });
-    hideAddTopicModal();
-    renderSubjects();
-  }
-
-  // --- ASSIGNMENTS LOGIC ---
   function showCreateAssignmentModal() { document.getElementById('create-assignment-modal').classList.remove('hidden'); }
   function hideCreateAssignmentModal() { 
     document.getElementById('create-assignment-modal').classList.add('hidden');
     document.getElementById('create-assignment-form').reset();
   }
-  
-  document.getElementById('create-assignment-button').addEventListener('click', showCreateAssignmentModal);
-  document.getElementById('create-assignment-form').addEventListener('submit', function(e) {
-      e.preventDefault();
-      
-      const title = document.getElementById('assignment-title').value.trim();
-      const type = document.getElementById('assignment-type').value;
-      const subject = document.getElementById('assignment-subject').value.trim();
-      const description = document.getElementById('assignment-desc').value.trim();
-      const marks = parseInt(document.getElementById('assignment-marks').value);
-      const due = document.getElementById('assignment-due').value;
-      
-      if (!title || !subject || !description || isNaN(marks) || !due) return;
-      
-      const currentClass = getClasses().find(c => c.id === currentClassId) || { totalStudents: 30 };
-
-      const newAssignment = {
-          id: Date.now(), title, type, subject, description, marks, due,
-          totalStudents: currentClass.totalStudents,
-          submitted: 0 // Always start with 0 submitted
-      };
-      
-      getCurrentData().assignments.push(newAssignment);
-      hideCreateAssignmentModal();
-      renderAssignments();
-  });
-  
-  function deleteAssignment(id) {
-      if (!confirm('Delete this Assignment/Quiz?')) return;
-      const data = getCurrentData();
-      data.assignments = data.assignments.filter(a => a.id !== id);
-      renderAssignments();
-  }
-  
-  // --- TRACKER LOGIC ---
   function showAddTrackerModal() { document.getElementById('add-tracker-modal').classList.remove('hidden'); document.getElementById('tracker-date').valueAsDate = new Date(); }
   function hideAddTrackerModal() { 
     document.getElementById('add-tracker-modal').classList.add('hidden');
     document.getElementById('add-tracker-form').reset();
   }
-  
-  document.getElementById('add-tracker-button').addEventListener('click', showAddTrackerModal);
-  document.getElementById('add-tracker-form').addEventListener('submit', function(e) {
-      e.preventDefault();
-      
-      const date = document.getElementById('tracker-date').value;
-      const subject = document.getElementById('tracker-subject').value.trim();
-      const topicsStr = document.getElementById('tracker-topics').value.trim();
-      const notes = document.getElementById('tracker-notes').value.trim();
-      const studentsPresent = parseInt(document.getElementById('tracker-students').value);
-      
-      if (!date || !subject || !topicsStr || !notes || isNaN(studentsPresent)) return;
-      
-      const topicsCovered = topicsStr.split(',').map(t => t.trim()).filter(t => t.length > 0);
 
-      const newEntry = {
-          id: Date.now(), date, subject, studentsPresent, topicsCovered, notes, notesFile: null
+  // -------------------------
+  // SERVER INTERACTIONS
+  // -------------------------
+  async function loadServerData() {
+    try {
+      const serverClasses = await apiFetch('/api/classes');
+      classes = serverClasses.map(c => ({ id: c.clientId, label: c.label, totalStudents: c.totalStudents || 30 }));
+      classData = {};
+      serverClasses.forEach(c => {
+        classData[c.clientId] = {
+          subjects: (c.subjects || []).map(s => ({ id: s.clientId, name: s.name, topics: (s.topics||[]).map(t => ({ id: t.clientId, title: t.title, description: t.description, duration: t.duration, completed: !!t.completed })) })),
+          assignments: (c.assignments || []).map(a => ({ id: a.clientId, title: a.title, type: a.type, subject: a.subject, description: a.description, marks: a.marks, due: a.due, totalStudents: a.totalStudents, submitted: a.submitted })),
+          tracker: (c.tracker || []).map(t => ({ id: t.clientId, date: t.date, subject: t.subject, studentsPresent: t.studentsPresent, topicsCovered: t.topicsCovered || [], notes: t.notes, notesFile: t.notesFile }))
+        };
+      });
+      if (classes.length && !currentClassId) currentClassId = classes[0].id;
+    } catch (err) {
+      console.error('Failed loading classes from server, falling back to local data:', err);
+      // keep fallback local sample data already in memory
+      if (!currentClassId && classes.length) currentClassId = classes[0].id;
+    }
+  }
+
+  // Add class (persist)
+  async function addClassConfirm() {
+    const label = document.getElementById('new-class-input').value.trim();
+    if (!label) return;
+    try {
+      const payload = { label, totalStudents: 30 };
+      const created = await apiFetch('/api/classes', { method: 'POST', body: JSON.stringify(payload) });
+      const id = created.clientId;
+      classes.push({ id, label: created.label, totalStudents: created.totalStudents || 30 });
+      classData[id] = {
+        subjects: (created.subjects || []).map(s=>({ id: s.clientId, name: s.name, topics: (s.topics||[]).map(t=>({ id: t.clientId, title: t.title, description: t.description, duration: t.duration, completed: !!t.completed })) })),
+        assignments: (created.assignments || []),
+        tracker: (created.tracker || [])
       };
-      
-      getCurrentData().tracker.push(newEntry);
+      renderClassSelect();
+      renderClassListInModal();
+      document.getElementById('new-class-input').value = '';
+      closeManageClassesModal();
+    } catch (err) {
+      console.error('Error creating class:', err);
+      showAlert('Error', 'Failed to create class. See console.');
+    }
+  }
+
+  // Delete class
+  async function deleteClass(id) {
+    if (!confirm('Delete this class? This will also delete all associated Syllabus, Assignments, and Tracker data!')) return;
+    try {
+      await apiFetch(`/api/classes/${id}`, { method: 'DELETE' });
+      classes = classes.filter(c => c.id !== id);
+      delete classData[id];
+      if (currentClassId === id) currentClassId = classes.length ? classes[0].id : null;
+      renderClassSelect();
+      renderClassListInModal();
+      renderAllContent();
+    } catch (err) {
+      console.error('Error deleting class:', err);
+      showAlert('Error', 'Failed to delete class.');
+    }
+  }
+
+  // Add subject
+  document.getElementById('add-subject-form').addEventListener('submit', async function(e){
+    e.preventDefault();
+    const name = document.getElementById('subject-name').value.trim();
+    if (!name) return;
+    try {
+      const res = await apiFetch(`/api/classes/${currentClassId}/subjects`, { method: 'POST', body: JSON.stringify({ name }) });
+      classData[currentClassId] = {
+        subjects: (res.subjects || []).map(s => ({ id: s.clientId, name: s.name, topics: (s.topics||[]).map(t=>({ id: t.clientId, title: t.title, description: t.description, duration: t.duration, completed: !!t.completed })) })),
+        assignments: (res.assignments || []),
+        tracker: (res.tracker || [])
+      };
+      hideAddSubjectModal();
+      renderSubjects();
+    } catch (err) {
+      console.error('Error adding subject:', err);
+      showAlert('Error', 'Failed to add subject.');
+    }
+  });
+
+  // Delete subject
+  async function deleteSubject(id) {
+    if (!confirm('Delete this subject and all its topics?')) return;
+    try {
+      const res = await apiFetch(`/api/classes/${currentClassId}/subjects/${id}`, { method: 'DELETE' });
+      classData[currentClassId].subjects = (res.subjects || []).map(s => ({ id: s.clientId, name: s.name, topics: (s.topics||[]).map(t=>({ id: t.clientId, title: t.title, description: t.description, duration: t.duration, completed: !!t.completed })) }));
+      renderSubjects();
+    } catch (err) {
+      console.error('DELETE subject error:', err);
+      showAlert('Error', 'Failed to delete subject.');
+    }
+  }
+
+  // Add topic
+  async function confirmAddTopic() {
+    const subjId = parseInt(document.getElementById('topic-subject-select').value);
+    const title = document.getElementById('topic-title').value.trim();
+    const desc = document.getElementById('topic-desc').value.trim();
+    const dur = document.getElementById('topic-duration').value.trim();
+    if (!subjId || !title || !desc || !dur) return;
+    try {
+      const payload = { title, description: desc, duration: dur };
+      const res = await apiFetch(`/api/classes/${currentClassId}/subjects/${subjId}/topics`, { method: 'POST', body: JSON.stringify(payload) });
+      const subj = (res.subjects || []).find(s => s.clientId === subjId);
+      if (subj) {
+        const localSubj = { id: subj.clientId, name: subj.name, topics: (subj.topics||[]).map(t=>({ id: t.clientId, title: t.title, description: t.description, duration: t.duration, completed: !!t.completed })) };
+        const idx = classData[currentClassId].subjects.findIndex(s=>s.id===subjId);
+        if (idx !== -1) classData[currentClassId].subjects[idx] = localSubj;
+      }
+      hideAddTopicModal();
+      renderSubjects();
+    } catch (err) {
+      console.error('Error adding topic:', err);
+      showAlert('Error', 'Failed to add topic.');
+    }
+  }
+
+  // Delete topic
+  async function deleteTopic(subjectId, topicId) {
+    if (!confirm('Delete this topic?')) return;
+    try {
+      const res = await apiFetch(`/api/classes/${currentClassId}/subjects/${subjectId}/topics/${topicId}`, { method: 'DELETE' });
+      const subj = (res.subjects || []).find(s => s.clientId === subjectId);
+      if (subj) {
+        const localSubj = { id: subj.clientId, name: subj.name, topics: (subj.topics||[]).map(t=>({ id: t.clientId, title: t.title, description: t.description, duration: t.duration, completed: !!t.completed })) };
+        const idx = classData[currentClassId].subjects.findIndex(s=>s.id===subjectId);
+        if (idx !== -1) classData[currentClassId].subjects[idx] = localSubj;
+      }
+      renderSubjects();
+    } catch (err) {
+      console.error('Error deleting topic:', err);
+      showAlert('Error', 'Failed to delete topic.');
+    }
+  }
+
+  // Toggle topic completion
+  async function toggleTopicCompletion(subjectId, topicId) {
+    try {
+      const res = await apiFetch(`/api/classes/${currentClassId}/subjects/${subjectId}/topics/${topicId}`, { method: 'PATCH' });
+      classData[currentClassId].subjects = (res.subjects || []).map(s => ({ id: s.clientId, name: s.name, topics: (s.topics||[]).map(t=>({ id: t.clientId, title: t.title, description: t.description, duration: t.duration, completed: !!t.completed })) }));
+      renderSubjects();
+    } catch (err) {
+      console.error('Error toggling topic:', err);
+      showAlert('Error', 'Failed to toggle topic.');
+    }
+  }
+
+  // Create assignment
+  document.getElementById('create-assignment-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const title = document.getElementById('assignment-title').value.trim();
+    const type = document.getElementById('assignment-type').value;
+    const subject = document.getElementById('assignment-subject').value.trim();
+    const description = document.getElementById('assignment-desc').value.trim();
+    const marks = parseInt(document.getElementById('assignment-marks').value);
+    const due = document.getElementById('assignment-due').value;
+    if (!title || !subject || !description || isNaN(marks) || !due) return;
+    try {
+      const payload = { title, type, subject, description, marks, due, totalStudents: (classes.find(c=>c.id===currentClassId)||{}).totalStudents || 30 };
+      const res = await apiFetch(`/api/classes/${currentClassId}/assignments`, { method: 'POST', body: JSON.stringify(payload) });
+      classData[currentClassId].assignments = (res.assignments || []).map(a=>({ id: a.clientId, title: a.title, type: a.type, subject: a.subject, description: a.description, marks: a.marks, due: a.due, totalStudents: a.totalStudents, submitted: a.submitted }));
+      hideCreateAssignmentModal();
+      renderAssignments();
+    } catch (err) {
+      console.error('Error creating assignment:', err);
+      showAlert('Error', 'Failed to create assignment.');
+    }
+  });
+
+  // Delete assignment
+  async function deleteAssignment(id) {
+    if (!confirm('Delete this Assignment/Quiz?')) return;
+    try {
+      const res = await apiFetch(`/api/classes/${currentClassId}/assignments/${id}`, { method: 'DELETE' });
+      classData[currentClassId].assignments = (res.assignments || []).map(a=>({ id: a.clientId, title: a.title, type: a.type, subject: a.subject, description: a.description, marks: a.marks, due: a.due, totalStudents: a.totalStudents, submitted: a.submitted }));
+      renderAssignments();
+    } catch (err) {
+      console.error('Error deleting assignment:', err);
+      showAlert('Error', 'Failed to delete assignment.');
+    }
+  }
+
+  // Add tracker
+  document.getElementById('add-tracker-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const date = document.getElementById('tracker-date').value;
+    const subject = document.getElementById('tracker-subject').value.trim();
+    const topicsStr = document.getElementById('tracker-topics').value.trim();
+    const notes = document.getElementById('tracker-notes').value.trim();
+    const studentsPresent = parseInt(document.getElementById('tracker-students').value);
+    if (!date || !subject || !topicsStr || !notes || isNaN(studentsPresent)) return;
+    try {
+      const payload = { date, subject, topicsCovered: topicsStr.split(',').map(t=>t.trim()).filter(Boolean), notes, studentsPresent };
+      const res = await apiFetch(`/api/classes/${currentClassId}/tracker`, { method: 'POST', body: JSON.stringify(payload) });
+      classData[currentClassId].tracker = (res.tracker || []).map(t=>({ id: t.clientId, date: t.date, subject: t.subject, studentsPresent: t.studentsPresent, topicsCovered: t.topicsCovered || [], notes: t.notes, notesFile: t.notesFile }));
       hideAddTrackerModal();
       renderTrackerEntries();
+    } catch (err) {
+      console.error('Error adding tracker entry:', err);
+      showAlert('Error', 'Failed to add tracker entry.');
+    }
   });
-  
-  function deleteTrackerEntry(id) {
-      if (!confirm('Delete this Daily Progress Entry?')) return;
-      const data = getCurrentData();
-      data.tracker = data.tracker.filter(t => t.id !== id);
+
+  // Delete tracker
+  async function deleteTrackerEntry(id) {
+    if (!confirm('Delete this Daily Progress Entry?')) return;
+    try {
+      const res = await apiFetch(`/api/classes/${currentClassId}/tracker/${id}`, { method: 'DELETE' });
+      classData[currentClassId].tracker = (res.tracker || []).map(t=>({ id: t.clientId, date: t.date, subject: t.subject, studentsPresent: t.studentsPresent, topicsCovered: t.topicsCovered || [], notes: t.notes, notesFile: t.notesFile }));
       renderTrackerEntries();
+    } catch (err) {
+      console.error('Error deleting tracker entry:', err);
+      showAlert('Error', 'Failed to delete tracker entry.');
+    }
   }
-  
+
   // -------------------------
-  // Alerts & small helpers
+  // Small UI helpers
   // -------------------------
   function showAlert(title, message) {
     document.getElementById('alert-title').textContent = title;
@@ -877,7 +847,7 @@
   });
 
   // -------------------------
-  // Simple view nav (keeps same behavior)
+  // View navigation
   // -------------------------
   let currentView = 'syllabus';
   function renderView() {
@@ -887,8 +857,6 @@
       tab.classList.toggle('active', tab.dataset.view === currentView);
     });
     if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
-    
-    // Ensure content is rendered when view changes
     if (currentView === 'syllabus') renderSubjects();
     else if (currentView === 'assignments') renderAssignments();
     else if (currentView === 'tracker') renderTrackerEntries();
@@ -900,21 +868,35 @@
     });
   });
 
-  // Manage classes button
-  document.getElementById('manage-classes-button').addEventListener('click', openManageClassesModal);
-
-  // When select changes, handle class change and add class-select-active
+  // when class select changes
   document.addEventListener('change', (e) => {
     if (e.target && e.target.id === 'class-semester-select') {
-      handleClassChange(e);
+      const select = e.target;
+      const selectedOption = select.options[select.selectedIndex];
+      const newClassId = parseInt(selectedOption.dataset.id);
+      if (currentClassId !== newClassId) {
+        currentClassId = newClassId;
+        renderAllContent();
+      }
+      if (select.value) select.classList.add('class-select-active'); else select.classList.remove('class-select-active');
     }
   });
 
   // -------------------------
-  // INIT
+  // Render all content
   // -------------------------
-  function initApp() {
-    // expose functions to global scope for use in inline event handlers (like onclick)
+  function renderAllContent() {
+    renderSubjects();
+    renderAssignments();
+    renderTrackerEntries();
+    if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  // -------------------------
+  // INIT (async)
+  // -------------------------
+  async function initApp() {
+    // expose functions used by inline onclicks
     window.confirmAddTopic = confirmAddTopic;
     window.openAddTopicModal = openAddTopicModal;
     window.deleteTopic = deleteTopic;
@@ -929,8 +911,12 @@
     window.hideAddTopicModal = hideAddTopicModal;
     window.hideCreateAssignmentModal = hideCreateAssignmentModal;
     window.hideAddTrackerModal = hideAddTrackerModal;
-    
-    // Initial Setup
+    window.openManageClassesModal = openManageClassesModal;
+    window.showCreateAssignmentModal = showCreateAssignmentModal;
+    window.showAddSubjectModal = showAddSubjectModal;
+    window.showAddTrackerModal = showAddTrackerModal;
+
+    // UI initial
     document.getElementById('loading-screen').classList.add('hidden');
     document.getElementById('dashboard-container').classList.remove('hidden');
 
@@ -938,50 +924,55 @@
     let teacherEmail = localStorage.getItem('userEmail') || 'dr.janedoe@eduva.com';
     let teacherName = teacherEmail.split('@')[0].replace(/\b\w/g, c => c.toUpperCase()).replace('.', ' ');
     document.getElementById('teacher-name').textContent = `${teacherName} (teacher)`;
+// wire top-level modal buttons (fix: buttons not opening modals)
+const addSubjectBtn = document.getElementById('add-subject-button');
+if (addSubjectBtn) addSubjectBtn.addEventListener('click', showAddSubjectModal);
 
-    // render initial UI
-    // Ensure we have a default class if the list isn't empty
-    if (classes.length > 0 && currentClassId === null) {
-        currentClassId = classes[0].id;
+const createAssignmentBtn = document.getElementById('create-assignment-button');
+if (createAssignmentBtn) createAssignmentBtn.addEventListener('click', showCreateAssignmentModal);
+
+const addTrackerBtn = document.getElementById('add-tracker-button');
+if (addTrackerBtn) addTrackerBtn.addEventListener('click', showAddTrackerModal);
+
+const manageClassesBtn = document.getElementById('manage-classes-button');
+if (manageClassesBtn) manageClassesBtn.addEventListener('click', openManageClassesModal);
+
+    // load server data
+    await loadServerData();
+
+    // ensure at least one class exists locally
+    if (!classes.length) {
+      classes = [{ id: 1, label: 'Default Class', totalStudents: 30 }];
+      classData[1] = { subjects: [], assignments: [], tracker: [] };
+      currentClassId = 1;
+    } else {
+      if (!currentClassId) currentClassId = classes[0].id;
     }
+
     renderClassSelect();
     renderAllContent();
-    renderView(); // Renders the default 'syllabus' view
+    renderView();
 
-    // attach basic listeners
+    // listeners
     document.getElementById('exit-button').addEventListener('click', () => {
       localStorage.removeItem('userToken'); 
       localStorage.removeItem('userEmail'); 
       localStorage.removeItem('userRole');
-      // Redirect to login page
       window.location.href = 'login.html';
     });
 
-    // modal click outside listeners
-    document.getElementById('manage-classes-modal').addEventListener('click', (e) => {
-      if (e.target.id === 'manage-classes-modal') closeManageClassesModal();
-    });
-    document.getElementById('add-subject-modal').addEventListener('click', (e) => {
-      if (e.target.id === 'add-subject-modal') hideAddSubjectModal();
-    });
-    document.getElementById('add-topic-modal').addEventListener('click', (e) => {
-      if (e.target.id === 'add-topic-modal') hideAddTopicModal();
-    });
-    document.getElementById('create-assignment-modal').addEventListener('click', (e) => {
-      if (e.target.id === 'create-assignment-modal') hideCreateAssignmentModal();
-    });
-    document.getElementById('add-tracker-modal').addEventListener('click', (e) => {
-      if (e.target.id === 'add-tracker-modal') hideAddTrackerModal();
-    });
+    // modal outside click
+    document.getElementById('manage-classes-modal').addEventListener('click', (e) => { if (e.target.id === 'manage-classes-modal') closeManageClassesModal(); });
+    document.getElementById('add-subject-modal').addEventListener('click', (e) => { if (e.target.id === 'add-subject-modal') hideAddSubjectModal(); });
+    document.getElementById('add-topic-modal').addEventListener('click', (e) => { if (e.target.id === 'add-topic-modal') hideAddTopicModal(); });
+    document.getElementById('create-assignment-modal').addEventListener('click', (e) => { if (e.target.id === 'create-assignment-modal') hideCreateAssignmentModal(); });
+    document.getElementById('add-tracker-modal').addEventListener('click', (e) => { if (e.target.id === 'add-tracker-modal') hideAddTrackerModal(); });
 
-
-    // final icons
     if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
   }
 
-  window.onload = initApp;
+  window.onload = async () => { await initApp(); };
 
 </script>
 </body>
 </html>
-
