@@ -1,0 +1,16 @@
+{
+  "name": "eduva",
+  "version": "1.0.0",
+  "description": "Eduva Learning Management System - Static Frontend",
+  "scripts": {
+    "build": "echo 'No build step required for static site'",
+    "dev": "echo 'Run a local server like: python -m http.server 3000 or npx serve'"
+  },
+  "keywords": [
+    "lms",
+    "education",
+    "static-site"
+  ],
+  "author": "",
+  "license": "ISC"
+}

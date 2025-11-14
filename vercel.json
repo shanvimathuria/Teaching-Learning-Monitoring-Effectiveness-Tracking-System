@@ -1,0 +1,75 @@
+{
+  "version": 2,
+  "buildCommand": null,
+  "outputDirectory": ".",
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/login.html"
+    },
+    {
+      "source": "/index.html",
+      "destination": "/login.html"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/login.html",
+      "dest": "/login.html"
+    },
+    {
+      "src": "/student.html",
+      "dest": "/student.html"
+    },
+    {
+      "src": "/tec.html",
+      "dest": "/tec.html"
+    },
+    {
+      "src": "/student.js",
+      "dest": "/student.js"
+    },
+    {
+      "src": "/(.*\\.(html|js|css|png|jpg|jpeg|gif|svg|pdf|docx|pptx|ico|woff|woff2|ttf|eot))",
+      "dest": "/$1"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    },
+    {
+      "source": "/(.*\\.js)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript"
+        }
+      ]
+    },
+    {
+      "source": "/(.*\\.css)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/css"
+        }
+      ]
+    }
+  ]
+}

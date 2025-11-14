@@ -1,0 +1,11 @@
+# Backend server files (not needed for static deployment)
+login.js
+
+# Development files
+node_modules/
+.vscode/
+*.log
+
+# Git files
+.git/
+.gitignore

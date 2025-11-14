@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eduva Login</title>
+    <!-- Load Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide Icons for aesthetic icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Load Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        /* Custom CSS to ensure Inter font is used and basic body reset */
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        /* Style for active role button */
+        .role-tab.active {
+            border-color: #3b82f6; /* blue-500 */
+            background-color: #eff6ff; /* blue-50 */
+            color: #2563eb; /* blue-600 */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center p-4">
+
+    <!-- Login Container -->
+    <div id="login-container" class="w-full max-w-md">
+
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="flex items-center justify-center mb-2">
+                <i data-lucide="book-open-text" class="w-9 h-9 text-blue-600 mr-2"></i>
+                <span class="text-4xl font-extrabold text-blue-600">Eduva</span>
+            </div>
+            <h1 class="text-2xl font-bold mt-4 text-gray-800 dark:text-gray-100">
+                Welcome to Your Learning Platform
+            </h1>
+            <p class="text-md text-gray-500 dark:text-gray-400">
+                Connect, learn, and grow together
+            </p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-3xl shadow-2xl">
+
+            <!-- Role Selection Tabs -->
+            <div id="role-tabs" class="flex space-x-3 mb-6 p-1 rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                <button type="button" data-role="student" class="role-tab flex-1 flex items-center justify-center py-3 px-2 rounded-xl text-sm font-semibold transition-all duration-200 ease-in-out border-2 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i data-lucide="graduation-cap" class="w-5 h-5 mr-2"></i> Student
+                </button>
+                <button type="button" data-role="teacher" class="role-tab flex-1 flex items-center justify-center py-3 px-2 rounded-xl text-sm font-semibold transition-all duration-200 ease-in-out border-2 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 active">
+                    <i data-lucide="briefcase" class="w-5 h-5 mr-2"></i> Teacher
+                </button>
+                <button type="button" data-role="admin" class="role-tab flex-1 flex items-center justify-center py-3 px-2 rounded-xl text-sm font-semibold transition-all duration-200 ease-in-out border-2 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i data-lucide="user-check" class="w-5 h-5 mr-2"></i> Admin
+                </button>
+            </div>
+
+            <form id="login-form">
+                <!-- Email Address -->
+                <div class="mb-5">
+                    <label class="block text-sm font-medium mb-2 text-gray-800 dark:text-gray-100" for="email">Email Address</label>
+                    <div class="relative">
+                        <input
+                            id="email"
+                            type="email"
+                            placeholder="Enter your email"
+                            class="w-full py-3 pl-12 pr-4 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-gray-800"
+                            required
+                        />
+                        <i data-lucide="mail" class="w-5 h-5 absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400"></i>
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2 text-gray-800 dark:text-gray-100" for="password">Password</label>
+                    <div class="relative">
+                        <input
+                            id="password"
+                            type="password"
+                            placeholder="Enter your password"
+                            class="w-full py-3 pl-12 pr-4 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-gray-800"
+                            required
+                        />
+                        <i data-lucide="lock" class="w-5 h-5 absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400"></i>
+                    </div>
+                </div>
+
+                <!-- Login Button -->
+                <button
+                    type="submit"
+                    id="login-button"
+                    class="w-full py-3 rounded-xl text-white font-bold transition-all duration-300 shadow-lg bg-blue-600 hover:bg-blue-700 shadow-blue-500/50 hover:shadow-xl"
+                >
+                    Sign In as Teacher
+                </button>
+            </form>
+
+            <!-- Message Box -->
+            <div id="message-box" class="mt-4 p-3 text-sm rounded-lg text-center hidden">
+                <!-- Messages will appear here -->
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 text-center text-xs text-gray-500 dark:text-gray-400">
+            <p>Eduva Learning Management System</p>
+        </footer>
+    </div>
+
+    <script>
+        // Simple login system without Firebase
+        let currentRole = 'teacher'; // Default role
+
+        // Test credentials for demonstration
+        const testCredentials = {
+            'teacher@eduva.com': { password: 'password', role: 'teacher', name: 'Dr. Sarah Johnson' },
+            'student1@eduva.com': { password: 'password123', role: 'student', name: 'Aarav Patel' },
+            'student2@eduva.com': { password: 'student456', role: 'student', name: 'Priya Sharma' },
+            'student3@eduva.com': { password: 'mypass789', role: 'student', name: 'Rohan Kumar' },
+            'admin@eduva.com': { password: 'password', role: 'admin', name: 'Admin User' }
+        };
+
+        /**
+         * Shows a message in the message box element.
+         */
+        const showMessage = (text, isSuccess = false) => {
+            const messageBox = document.getElementById('message-box');
+            messageBox.textContent = text;
+            messageBox.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700', 'dark:bg-green-900', 'dark:text-green-300', 'dark:bg-red-900', 'dark:text-red-300');
+            
+            if (isSuccess) {
+                messageBox.classList.add('bg-green-100', 'text-green-700', 'dark:bg-green-900', 'dark:text-green-300');
+            } else {
+                messageBox.classList.add('bg-red-100', 'text-red-700', 'dark:bg-red-900', 'dark:text-red-300');
+            }
+        };
+        
+        /**
+         * Updates the UI when the role tab is clicked.
+         */
+        const updateRoleUI = (newRole) => {
+            currentRole = newRole;
+            const buttons = document.querySelectorAll('.role-tab');
+            const loginButton = document.getElementById('login-button');
+
+            buttons.forEach(button => {
+                if (button.dataset.role === newRole) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+
+            loginButton.textContent = `Sign In as ${newRole.charAt(0).toUpperCase() + newRole.slice(1)}`;
+        };
+
+        /**
+         * Handles the form submission for login.
+         */
+        const handleLogin = async (e) => {
+            e.preventDefault();
+            
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const loginButton = document.getElementById('login-button');
+
+            const email = emailInput.value;
+            const password = passwordInput.value;
+
+            if (!email || !password) {
+                showMessage("Please enter both email and password.", false);
+                return;
+            }
+
+            // Start processing state
+            loginButton.textContent = 'Processing...';
+            loginButton.disabled = true;
+            showMessage('Logging in...', false);
+
+            // Simulate API call delay
+            setTimeout(() => {
+                // Check credentials
+                if (testCredentials[email] && testCredentials[email].password === password) {
+                    const userRole = testCredentials[email].role;
+                    
+                    if (userRole === currentRole) {
+                        // SUCCESS: Role matches the selected tab
+                        showMessage(`Success! Logged in as ${currentRole}. Redirecting...`, true);
+                        
+                        // Store user data in localStorage for the dashboard
+                        localStorage.setItem('userEmail', email);
+                        localStorage.setItem('userRole', userRole);
+                        localStorage.setItem('userName', testCredentials[email].name);
+                        localStorage.setItem('userToken', 'SIMULATED_JWT_TOKEN_123');
+                        
+                    // Redirect based on role
+                    setTimeout(() => {
+                        if (userRole === 'teacher') {
+                            window.location.href = 'tec.html';
+                        } else if (userRole === 'student') {
+                            window.location.href = 'student.html';
+                        } else if (userRole === 'admin') {
+                            showMessage(`Admin dashboard not yet implemented.`, false);
+                        }
+                    }, 1500);
+                        
+                        // Display success message
+                        loginButton.textContent = `Access Granted!`;
+                        loginButton.classList.add('bg-green-600', 'hover:bg-green-700', 'shadow-green-500/50');
+                        loginButton.classList.remove('bg-blue-600', 'hover:bg-blue-700', 'shadow-blue-500/50');
+                        
+                    } else {
+                        // FAILURE: Role mismatch
+                        showMessage(`Login successful, but your role is '${userRole}', not '${currentRole}'. Please select the correct role tab.`, false);
+                        loginButton.textContent = `Sign In as ${currentRole.charAt(0).toUpperCase() + currentRole.slice(1)}`;
+                        loginButton.disabled = false;
+                    }
+                } else {
+                    // FAILURE: Invalid credentials
+                    showMessage("Invalid email or password.", false);
+                    loginButton.textContent = `Sign In as ${currentRole.charAt(0).toUpperCase() + currentRole.slice(1)}`;
+                    loginButton.disabled = false;
+                }
+            }, 1000);
+        };
+
+        // Event Listeners
+        window.onload = () => {
+            // Re-render Lucide icons after they are loaded
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
+
+            // Attach login form submission handler
+            const loginForm = document.getElementById('login-form');
+            if (loginForm) {
+                loginForm.addEventListener('submit', handleLogin);
+            }
+
+            // Attach role tab click handlers
+            const roleButtons = document.querySelectorAll('.role-tab');
+            roleButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const newRole = button.dataset.role;
+                    updateRoleUI(newRole);
+                    // Clear previous messages when switching roles
+                    document.getElementById('message-box').classList.add('hidden');
+                });
+            });
+
+            // Set initial active role visually
+            updateRoleUI(currentRole);
+        };
+    </script>
+</body>
+</html>
+
