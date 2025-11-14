@@ -361,7 +361,7 @@ app.delete('/api/classes/:clientId/tracker/:trackerClientId', async (req, res) =
 });
 
 /* Serve static frontend after API routes */
-app.use(express.static('public'));
+app.use(express.static('__dirname'));
 
 // Default route
 app.get('/', (req, res) => {
